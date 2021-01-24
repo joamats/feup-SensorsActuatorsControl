@@ -1,0 +1,42 @@
+//Inicialização de Constantes
+const float pv_est = 20;
+const float c_est = 42.8;
+const float dt = 0.4;
+const float tau_i = 6.5; 
+const float kc = 5.5; 
+const float tau_d=0; //Controlo diferencial nulo
+
+//Declaração das Variáveis
+float c = 0;
+float sum_errs = 0;
+float error;
+float pv;
+float pv_before;
+
+void setup() {
+  Serial.begin(9600); //Inicializa a comunicação série, baud rate = 9600
+}
+
+void loop() {
+
+  pv = Serial.parseFloat(); //recebe os valores do LabVIEW
+
+  error = pv_est - pv; //calcula o erro
+  
+  sum_errs = sum_errs + error; // acumula o erro
+  
+  c = c_est - kc * (error + dt / tau_i * sum_errs-tau_d*(pv-pv_before)/dt); //calculo do controlo
+
+  if (c <= 0){
+    c = 0; // Impede que o controlo tenha valores inferiores a 0
+    sum_errs = sum_errs - error;}
+  else if (c >= 100){
+    c = 100; // Impede que o valor do controlo exceda o 100
+    sum_errs = sum_errs - error;} //Acumula erros apenas quando o controlo não está saturado
+
+  pv_before=pv;
+
+  delay(dt * 1000); // Espera 400 ms para voltar a correr
+
+  Serial.print(c); // Envia para o LabVIEW o valor de controlo calculado
+}
